@@ -6,11 +6,10 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 
-SOURCES +=  tst_funcforserver_test.cpp \
-    ../EchoServer/functionsforserver.cpp \
-    ../EchoServer/mytcpserver.cpp
+SOURCES += tst_funcforserver_test.cpp \
+    ../backend_server/functionsforserver.cpp \
+    ../backend_server/mytcpserver.cpp
 
 HEADERS += \
-    ../EchoServer/dataBase.h \
-    ../EchoServer/functionsforserver.h \
-    ../EchoServer/mytcpserver.h
+    ../backend_server/functionsforserver.h \
+    ../backend_server/mytcpserver.h
