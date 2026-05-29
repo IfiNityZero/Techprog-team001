@@ -1,31 +1,30 @@
-# Используем Ubuntu 22.04 как базовый образ
 FROM ubuntu:22.04
 
-# Отключаем интерактивные вопросы при установке пакетов
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Устанавливаем Qt и необходимые зависимости
+# Устанавливаем Qt5 (более стабильный в Ubuntu 22.04)
 RUN apt-get update && apt-get install -y \
-    qt6-base-dev \
-    qt6-tools-dev \
-    cmake \
+    qtbase5-dev \
+    qttools5-dev \
     build-essential \
-    libgl1-mesa-dev \
+    qt5-qmake \
+    libqt5network5 \
     && rm -rf /var/lib/apt/lists/*
 
-# Создаём рабочую директорию внутри контейнера
 WORKDIR /app
 
-# Копируем весь проект в контейнер
+# Копируем весь проект
 COPY . .
 
-# Собираем сервер
+# Добавляем functionsforserver в .pro файл и собираем
 RUN cd backend_server && \
-    qmake6 echoServer.pro && \
-    make
+    echo "SOURCES += functionsforserver.cpp" >> echoServer.pro && \
+    echo "HEADERS += functionsforserver.h" >> echoServer.pro && \
+    qmake echoServer.pro && \
+    make && \
+    echo "Build successful!" && \
+    ls -la
 
-# Порт на котором слушает сервер
 EXPOSE 33333
 
-# Запускаем сервер
-CMD ["./backend_server/EchoServer"]
+CMD ["./backend_server/echoServer"]
