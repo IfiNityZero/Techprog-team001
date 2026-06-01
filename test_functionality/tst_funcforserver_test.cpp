@@ -232,5 +232,5 @@ void FuncForServer_Test::test_database_admin_exists()
              qPrintable("Admin login failed: " + result));
 }
 
-QTEST_APPLESS_MAIN(FuncForServer_Test)
+QTEST_MAIN(FuncForServer_Test)
 #include "tst_funcforserver_test.moc"
