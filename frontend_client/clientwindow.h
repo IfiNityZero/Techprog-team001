@@ -13,6 +13,7 @@
 #include <QGroupBox>
 #include <QStackedWidget>
 #include <QTableWidget>
+#include <QHeaderView>
 
 /**
  * @brief Главное окно клиента с авторизацией и ролями.
