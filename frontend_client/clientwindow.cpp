@@ -1,6 +1,22 @@
 #include "clientwindow.h"
 #include <QApplication>
 
+// Инициализация статического указателя
+ClientWindow* ClientWindow::p_instance = nullptr;
+
+ClientWindow* ClientWindow::getInstance()
+{
+    if (!p_instance)
+        p_instance = new ClientWindow();
+    return p_instance;
+}
+
+void ClientWindow::dropInstance()
+{
+    delete p_instance;
+    p_instance = nullptr;
+}
+
 ClientWindow::ClientWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -16,9 +32,6 @@ ClientWindow::ClientWindow(QWidget *parent)
 
 ClientWindow::~ClientWindow() {}
 
-// ─────────────────────────────────────────────
-//  ПОСТРОЕНИЕ UI
-// ─────────────────────────────────────────────
 void ClientWindow::setupUI()
 {
     stackedWidget = new QStackedWidget(this);
@@ -39,13 +52,11 @@ void ClientWindow::setupLoginPage()
     layout->setSpacing(10);
     layout->setContentsMargins(40, 40, 40, 40);
 
-    // Заголовок
     QLabel *title = new QLabel("TaMP Client — команда 001");
     title->setAlignment(Qt::AlignCenter);
     title->setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 10px;");
     layout->addWidget(title);
 
-    // Подключение
     QGroupBox *grpConn = new QGroupBox("Подключение к серверу");
     QHBoxLayout *connLayout = new QHBoxLayout(grpConn);
     connLayout->addWidget(new QLabel("Хост:"));
@@ -64,7 +75,6 @@ void ClientWindow::setupLoginPage()
     connLayout->addStretch();
     layout->addWidget(grpConn);
 
-    // Авторизация
     QGroupBox *grpAuth = new QGroupBox("Авторизация");
     QVBoxLayout *authLayout = new QVBoxLayout(grpAuth);
 
@@ -97,17 +107,14 @@ void ClientWindow::setupLoginPage()
     labelAuthStatus = new QLabel("");
     labelAuthStatus->setAlignment(Qt::AlignCenter);
     authLayout->addWidget(labelAuthStatus);
-
     layout->addWidget(grpAuth);
     layout->addStretch();
 
-    // Подсказка
     QLabel *hint = new QLabel("Администратор по умолчанию: login=admin, password=admin123");
     hint->setAlignment(Qt::AlignCenter);
     hint->setStyleSheet("color: gray; font-size: 11px;");
     layout->addWidget(hint);
 
-    // Сигналы
     connect(btnConnect,  &QPushButton::clicked, this, &ClientWindow::connectToServer);
     connect(btnLogin,    &QPushButton::clicked, this, &ClientWindow::sendLogin);
     connect(btnRegister, &QPushButton::clicked, this, &ClientWindow::sendRegister);
@@ -120,7 +127,6 @@ void ClientWindow::setupMainPage()
     layout->setSpacing(8);
     layout->setContentsMargins(12, 12, 12, 12);
 
-    // Инфо о пользователе
     QHBoxLayout *topRow = new QHBoxLayout();
     labelUserInfo = new QLabel("Пользователь: —");
     labelUserInfo->setStyleSheet("font-weight: bold; font-size: 13px;");
@@ -131,7 +137,6 @@ void ClientWindow::setupMainPage()
     topRow->addWidget(btnLogout);
     layout->addLayout(topRow);
 
-    // Команда
     QGroupBox *grpCmd = new QGroupBox("Команда");
     QVBoxLayout *cmdLayout = new QVBoxLayout(grpCmd);
 
@@ -169,7 +174,6 @@ void ClientWindow::setupMainPage()
     cmdLayout->addWidget(btnSend);
     layout->addWidget(grpCmd);
 
-    // Таблица результатов
     QGroupBox *grpTable = new QGroupBox("Результаты");
     QVBoxLayout *tableLayout = new QVBoxLayout(grpTable);
     tableResult = new QTableWidget(0, 2);
@@ -180,7 +184,6 @@ void ClientWindow::setupMainPage()
     tableLayout->addWidget(tableResult);
     layout->addWidget(grpTable);
 
-    // Лог
     QGroupBox *grpLog = new QGroupBox("Лог");
     QVBoxLayout *logLayout = new QVBoxLayout(grpLog);
     textLog = new QTextEdit();
@@ -193,7 +196,6 @@ void ClientWindow::setupMainPage()
     logLayout->addWidget(btnClear, 0, Qt::AlignRight);
     layout->addWidget(grpLog);
 
-    // Сигналы
     connect(btnSend,      &QPushButton::clicked, this, &ClientWindow::sendCommand);
     connect(btnLogout,    &QPushButton::clicked, this, &ClientWindow::showLoginPage);
     connect(btnClear,     &QPushButton::clicked, textLog, &QTextEdit::clear);
@@ -201,9 +203,6 @@ void ClientWindow::setupMainPage()
             this, &ClientWindow::onCommandChanged);
 }
 
-// ─────────────────────────────────────────────
-//  ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ
-// ─────────────────────────────────────────────
 void ClientWindow::showLoginPage()
 {
     currentRole = "";
@@ -214,8 +213,6 @@ void ClientWindow::showLoginPage()
 void ClientWindow::showMainPage(const QString &role)
 {
     currentRole = role;
-
-    // Заполняем команды в зависимости от роли
     comboCommand->clear();
     comboCommand->addItem("Шифр Виженера — зашифровать", "vigenere_encrypt");
     comboCommand->addItem("Шифр Виженера — расшифровать", "vigenere_decrypt");
@@ -224,7 +221,6 @@ void ClientWindow::showMainPage(const QString &role)
     comboCommand->addItem("Стеганография — внедрить", "stego_encode");
     comboCommand->addItem("Стеганография — извлечь", "stego_decode");
 
-    // Команды только для админа
     if (role == "admin") {
         comboCommand->addItem("[ADMIN] Список пользователей", "admin_users");
         comboCommand->addItem("[ADMIN] Удалить пользователя", "admin_delete");
@@ -239,9 +235,6 @@ void ClientWindow::showMainPage(const QString &role)
     onCommandChanged(0);
 }
 
-// ─────────────────────────────────────────────
-//  СЕТЬ
-// ─────────────────────────────────────────────
 void ClientWindow::connectToServer()
 {
     QString host = editHost->text().trimmed();
@@ -281,10 +274,8 @@ void ClientWindow::onReadyRead()
 {
     QByteArray data = socket->readAll();
     QString response = QString::fromUtf8(data).trimmed();
-
     appendLog("◀ " + response);
 
-    // Обрабатываем ответ на логин
     if (pendingAction == "login") {
         pendingAction = "";
         if (response.startsWith("ok: logged in as")) {
@@ -297,7 +288,6 @@ void ClientWindow::onReadyRead()
         return;
     }
 
-    // Обрабатываем ответ на регистрацию
     if (pendingAction == "register") {
         pendingAction = "";
         labelAuthStatus->setText(response);
@@ -306,14 +296,10 @@ void ClientWindow::onReadyRead()
         return;
     }
 
-    // Обычный ответ — добавляем в таблицу
     if (stackedWidget->currentWidget() == mainPage)
         addTableRow(lastCommand, response);
 }
 
-// ─────────────────────────────────────────────
-//  ОТПРАВКА КОМАНД
-// ─────────────────────────────────────────────
 void ClientWindow::sendLogin()
 {
     QString login = editLogin->text().trimmed();
@@ -347,8 +333,7 @@ void ClientWindow::sendRegister()
 void ClientWindow::sendCommand()
 {
     if (socket->state() != QAbstractSocket::ConnectedState) {
-        appendLog("Ошибка: нет подключения");
-        return;
+        appendLog("Ошибка: нет подключения"); return;
     }
 
     int idx = comboCommand->currentIndex();
@@ -359,30 +344,24 @@ void ClientWindow::sendCommand()
     QString request;
 
     if (cmd == "vigenere_encrypt" || cmd == "vigenere_decrypt") {
-        if (arg1.isEmpty() || arg2.isEmpty()) {
-            appendLog("Ошибка: заполните текст и ключ"); return;
-        }
+        if (arg1.isEmpty() || arg2.isEmpty()) { appendLog("Ошибка: текст и ключ"); return; }
         request = cmd + ":" + arg1 + ":" + arg2;
     } else if (cmd == "sha384") {
         if (arg1.isEmpty()) { appendLog("Ошибка: введите текст"); return; }
         request = "sha384:" + arg1;
     } else if (cmd == "chord") {
-        if (arg1.isEmpty() || arg2.isEmpty()) {
-            appendLog("Ошибка: введите границы"); return;
-        }
+        if (arg1.isEmpty() || arg2.isEmpty()) { appendLog("Ошибка: границы"); return; }
         request = "chord:" + arg1 + ":" + arg2 + ":" + arg3;
     } else if (cmd == "stego_encode") {
-        if (arg1.isEmpty() || arg2.isEmpty()) {
-            appendLog("Ошибка: укажите путь и сообщение"); return;
-        }
+        if (arg1.isEmpty() || arg2.isEmpty()) { appendLog("Ошибка: путь и сообщение"); return; }
         request = "stego_encode:" + arg1 + ":" + arg2;
     } else if (cmd == "stego_decode") {
-        if (arg1.isEmpty()) { appendLog("Ошибка: укажите путь"); return; }
+        if (arg1.isEmpty()) { appendLog("Ошибка: путь"); return; }
         request = "stego_decode:" + arg1;
     } else if (cmd == "admin_users") {
         request = "admin_users";
     } else if (cmd == "admin_delete") {
-        if (arg1.isEmpty()) { appendLog("Ошибка: укажите логин"); return; }
+        if (arg1.isEmpty()) { appendLog("Ошибка: логин"); return; }
         request = "admin_delete:" + arg1;
     }
 
@@ -391,13 +370,9 @@ void ClientWindow::sendCommand()
     socket->write((request + "\r\n").toUtf8());
 }
 
-// ─────────────────────────────────────────────
-//  АДАПТАЦИЯ ПОЛЕЙ
-// ─────────────────────────────────────────────
 void ClientWindow::onCommandChanged(int index)
 {
     QString cmd = comboCommand->itemData(index).toString();
-
     labelArg1->show(); editArg1->show();
     labelArg2->show(); editArg2->show();
     labelArg3->show(); editArg3->show();
@@ -434,9 +409,6 @@ void ClientWindow::onCommandChanged(int index)
     }
 }
 
-// ─────────────────────────────────────────────
-//  ТАБЛИЦА И ЛОГ
-// ─────────────────────────────────────────────
 void ClientWindow::addTableRow(const QString &cmd, const QString &response)
 {
     int row = tableResult->rowCount();

@@ -6,8 +6,14 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     app.setApplicationName("TaMP Client");
 
-    ClientWindow window;
-    window.show();
+    // Получаем единственный экземпляр через Singleton
+    ClientWindow *window = ClientWindow::getInstance();
+    window->show();
 
-    return app.exec();
+    int result = app.exec();
+
+    // Удаляем экземпляр при закрытии
+    ClientWindow::dropInstance();
+
+    return result;
 }

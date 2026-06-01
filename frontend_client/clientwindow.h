@@ -16,19 +16,26 @@
 #include <QHeaderView>
 
 /**
- * @brief Главное окно клиента с авторизацией и ролями.
+ * @brief Главное окно клиента — реализует паттерн Singleton.
  *
- * Содержит два экрана:
- * - Экран авторизации (логин/регистрация)
- * - Основной экран работы с сервером
+ * Гарантирует что окно создаётся только один раз.
+ * Для получения экземпляра используй ClientWindow::getInstance()
  */
 class ClientWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit ClientWindow(QWidget *parent = nullptr);
-    ~ClientWindow();
+    /**
+     * @brief Получить единственный экземпляр окна.
+     * @return указатель на ClientWindow
+     */
+    static ClientWindow* getInstance();
+
+    /**
+     * @brief Удалить экземпляр (вызывается при закрытии).
+     */
+    static void dropInstance();
 
 private slots:
     void connectToServer();
@@ -42,6 +49,14 @@ private slots:
     void onCommandChanged(int index);
 
 private:
+    // Конструктор приватный — нельзя создать снаружи
+    explicit ClientWindow(QWidget *parent = nullptr);
+    ~ClientWindow();
+
+    // Запрещаем копирование
+    ClientWindow(const ClientWindow&) = delete;
+    ClientWindow& operator=(const ClientWindow&) = delete;
+
     void setupUI();
     void setupLoginPage();
     void setupMainPage();
@@ -49,6 +64,9 @@ private:
     void showMainPage(const QString &role);
     void appendLog(const QString &msg, const QString &color = "");
     void addTableRow(const QString &cmd, const QString &response);
+
+    // Единственный экземпляр
+    static ClientWindow* p_instance;
 
     // Сеть
     QTcpSocket  *socket;
