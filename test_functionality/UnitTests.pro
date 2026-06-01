@@ -8,8 +8,10 @@ TEMPLATE = app
 
 SOURCES += tst_funcforserver_test.cpp \
     ../backend_server/functionsforserver.cpp \
-    ../backend_server/mytcpserver.cpp
+    ../backend_server/mytcpserver.cpp \
+    ../backend_server/database.cpp
 
 HEADERS += \
     ../backend_server/functionsforserver.h \
-    ../backend_server/mytcpserver.h
+    ../backend_server/mytcpserver.h \
+    ../backend_server/database.h
