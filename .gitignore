@@ -7,3 +7,4 @@ release/
 Makefile
 .qmake.stash
 *.user
+docs/
