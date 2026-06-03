@@ -11,9 +11,11 @@ SOURCES += \
     main.cpp \
     mytcpserver.cpp \
     functionsforserver.cpp \
-    database.cpp
+    database.cpp \
+    sha384.cpp
 
 HEADERS += \
     mytcpserver.h \
     functionsforserver.h \
-    database.h
+    database.h \
+    sha384.h

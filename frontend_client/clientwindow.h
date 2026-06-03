@@ -1,6 +1,16 @@
 #ifndef CLIENTWINDOW_H
 #define CLIENTWINDOW_H
 
+/**
+ * @file clientwindow.h
+ * @brief Заголовочный файл окна клиента.
+ * @author Усачев Тимофей, Корвяков Святогор, Гусейнов Артем
+ * @date 2026
+ *
+ * Окно клиента с авторизацией, ролями и таблицей результатов.
+ * Несколько экземпляров управляются через ClientManager (Singleton).
+ */
+
 #include <QMainWindow>
 #include <QTcpSocket>
 #include <QVBoxLayout>
@@ -14,12 +24,17 @@
 #include <QStackedWidget>
 #include <QTableWidget>
 #include <QHeaderView>
+#include <QCloseEvent>
 
 /**
- * @brief Главное окно клиента — реализует паттерн Singleton.
+ * @brief Окно клиента для работы с TCP сервером.
  *
- * Гарантирует что окно создаётся только один раз.
- * Для получения экземпляра используй ClientWindow::getInstance()
+ * Содержит два экрана (через QStackedWidget):
+ * - Экран авторизации: подключение, логин, регистрация
+ * - Основной экран: команды, таблица результатов, лог
+ *
+ * Каждое окно — независимая сессия со своим сокетом и авторизацией.
+ * Создаётся через ClientManager::createNewWindow().
  */
 class ClientWindow : public QMainWindow
 {
@@ -27,57 +42,79 @@ class ClientWindow : public QMainWindow
 
 public:
     /**
-     * @brief Получить единственный экземпляр окна.
-     * @return указатель на ClientWindow
+     * @brief Конструктор окна клиента.
+     * @param parent Родительский виджет (по умолчанию nullptr)
      */
-    static ClientWindow* getInstance();
+    explicit ClientWindow(QWidget *parent = nullptr);
 
     /**
-     * @brief Удалить экземпляр (вызывается при закрытии).
+     * @brief Деструктор.
      */
-    static void dropInstance();
-
-private slots:
-    void connectToServer();
-    void disconnectFromServer();
-    void sendLogin();
-    void sendRegister();
-    void sendCommand();
-    void onConnected();
-    void onDisconnected();
-    void onReadyRead();
-    void onCommandChanged(int index);
-
-private:
-    // Конструктор приватный — нельзя создать снаружи
-    explicit ClientWindow(QWidget *parent = nullptr);
     ~ClientWindow();
 
-    // Запрещаем копирование
-    ClientWindow(const ClientWindow&) = delete;
-    ClientWindow& operator=(const ClientWindow&) = delete;
+signals:
+    /**
+     * @brief Сигнал испускается при закрытии окна.
+     *
+     * ClientManager подключается к этому сигналу
+     * чтобы удалить окно из своего списка.
+     *
+     * @param window Указатель на закрытое окно
+     */
+    void windowClosed(ClientWindow *window);
 
-    void setupUI();
-    void setupLoginPage();
-    void setupMainPage();
-    void showLoginPage();
-    void showMainPage(const QString &role);
+protected:
+    /**
+     * @brief Перехватываем событие закрытия окна.
+     *
+     * Испускаем сигнал windowClosed перед закрытием.
+     *
+     * @param event Событие закрытия
+     */
+    void closeEvent(QCloseEvent *event) override;
+
+private slots:
+    void connectToServer();      ///< Подключиться к серверу
+    void disconnectFromServer(); ///< Отключиться от сервера
+    void sendLogin();            ///< Отправить запрос авторизации
+    void sendRegister();         ///< Отправить запрос регистрации
+    void sendCommand();          ///< Отправить команду серверу
+    void onConnected();          ///< Обработка успешного подключения
+    void onDisconnected();       ///< Обработка отключения
+    void onReadyRead();          ///< Обработка входящих данных
+    void onCommandChanged(int index); ///< Обновление полей при смене команды
+    void openNewWindow();        ///< Открыть новое окно клиента
+
+private:
+    void setupUI();          ///< Построить интерфейс
+    void setupLoginPage();   ///< Построить экран авторизации
+    void setupMainPage();    ///< Построить основной экран
+    void showLoginPage();    ///< Переключиться на экран авторизации
+    void showMainPage(const QString &role); ///< Переключиться на основной экран
+
+    /**
+     * @brief Добавить сообщение в лог.
+     * @param msg Текст сообщения
+     * @param color Цвет текста (опционально)
+     */
     void appendLog(const QString &msg, const QString &color = "");
+
+    /**
+     * @brief Добавить строку в таблицу результатов.
+     * @param cmd Название команды
+     * @param response Ответ сервера
+     */
     void addTableRow(const QString &cmd, const QString &response);
 
-    // Единственный экземпляр
-    static ClientWindow* p_instance;
-
     // Сеть
-    QTcpSocket  *socket;
-    QString      currentRole;
-    QString      pendingAction;
-    QString      lastCommand;
+    QTcpSocket  *socket;         ///< TCP сокет для связи с сервером
+    QString      currentRole;    ///< Роль текущего пользователя
+    QString      pendingAction;  ///< Ожидаемое действие (login/register)
+    QString      lastCommand;    ///< Последняя отправленная команда
 
-    // Стек страниц
-    QStackedWidget *stackedWidget;
+    QStackedWidget *stackedWidget; ///< Контейнер страниц (авторизация / основной)
 
-    // Страница 1: логин
+    // Страница авторизации
     QWidget     *loginPage;
     QLineEdit   *editHost;
     QLineEdit   *editPort;
@@ -89,7 +126,7 @@ private:
     QLabel      *labelConnStatus;
     QLabel      *labelAuthStatus;
 
-    // Страница 2: основной экран
+    // Основной экран
     QWidget      *mainPage;
     QLabel       *labelUserInfo;
     QComboBox    *comboCommand;
@@ -101,6 +138,7 @@ private:
     QLabel       *labelArg3;
     QPushButton  *btnSend;
     QPushButton  *btnLogout;
+    QPushButton  *btnNewWindow; ///< Кнопка открытия нового окна
     QTextEdit    *textLog;
     QTableWidget *tableResult;
     QPushButton  *btnClear;

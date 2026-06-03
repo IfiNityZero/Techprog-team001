@@ -1,0 +1,84 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 510B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/ubuntu:22.04
+#2 DONE 0.7s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/5] FROM docker.io/library/ubuntu:22.04@sha256:4f838adc7181d9039ac795a7d0aba05a9bd9ecd480d294483169c5def983b64d
+#4 resolve docker.io/library/ubuntu:22.04@sha256:4f838adc7181d9039ac795a7d0aba05a9bd9ecd480d294483169c5def983b64d 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 391.36kB 0.1s done
+#5 DONE 0.1s
+
+#6 [2/5] RUN apt-get update && apt-get install -y     qtbase5-dev     qttools5-dev     build-essential     qt5-qmake     libqt5network5     libqt5sql5-sqlite     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [3/5] WORKDIR /app
+#7 CACHED
+
+#8 [4/5] COPY . .
+#8 DONE 0.5s
+
+#9 [5/5] RUN cd backend_server &&     qmake echoServer.pro &&     make &&     echo "Build successful!" &&     ls -la
+#9 0.198 Info: creating stash file /app/backend_server/.qmake.stash
+#9 0.215 g++ -c -pipe -O2 -std=gnu++11 -Wall -Wextra -D_REENTRANT -fPIC -DQT_NO_DEBUG -DQT_NETWORK_LIB -DQT_SQL_LIB -DQT_CORE_LIB -I. -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtNetwork -I/usr/include/x86_64-linux-gnu/qt5/QtSql -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -o main.o main.cpp
+#9 1.119 g++ -c -pipe -O2 -std=gnu++11 -Wall -Wextra -D_REENTRANT -fPIC -DQT_NO_DEBUG -DQT_NETWORK_LIB -DQT_SQL_LIB -DQT_CORE_LIB -I. -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtNetwork -I/usr/include/x86_64-linux-gnu/qt5/QtSql -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -o mytcpserver.o mytcpserver.cpp
+#9 1.958 g++ -c -pipe -O2 -std=gnu++11 -Wall -Wextra -D_REENTRANT -fPIC -DQT_NO_DEBUG -DQT_NETWORK_LIB -DQT_SQL_LIB -DQT_CORE_LIB -I. -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtNetwork -I/usr/include/x86_64-linux-gnu/qt5/QtSql -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -o functionsforserver.o functionsforserver.cpp
+#9 2.321 g++ -c -pipe -O2 -std=gnu++11 -Wall -Wextra -D_REENTRANT -fPIC -DQT_NO_DEBUG -DQT_NETWORK_LIB -DQT_SQL_LIB -DQT_CORE_LIB -I. -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtNetwork -I/usr/include/x86_64-linux-gnu/qt5/QtSql -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -o database.o database.cpp
+#9 2.702 g++ -c -pipe -O2 -std=gnu++11 -Wall -Wextra -D_REENTRANT -fPIC -DQT_NO_DEBUG -DQT_NETWORK_LIB -DQT_SQL_LIB -DQT_CORE_LIB -I. -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtNetwork -I/usr/include/x86_64-linux-gnu/qt5/QtSql -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -o sha384.o sha384.cpp
+#9 2.842 sha384.cpp: In static member function 'static QString SHA384::hash(const QByteArray&)':
+#9 2.842 sha384.cpp:207:11: error: ambiguous overload for 'operator[]' (operand types are 'QByteArray' and 'uint64_t' {aka 'long unsigned int'})
+#9 2.842   207 |     padded[msgLen] = 0x80; // добавляем бит "1" после сообщения (0x80 = 10000000)
+#9 2.842       |           ^
+#9 2.842 sha384.cpp:207:11: note: candidate: 'operator[](const char*, long int)' (built-in)
+#9 2.842 In file included from /usr/include/x86_64-linux-gnu/qt5/QtCore/qstring.h:50,
+#9 2.842                  from /usr/include/x86_64-linux-gnu/qt5/QtCore/QString:1,
+#9 2.842                  from sha384.h:21,
+#9 2.842                  from sha384.cpp:12:
+#9 2.842 /usr/include/x86_64-linux-gnu/qt5/QtCore/qbytearray.h:501:13: note: candidate: 'char QByteArray::operator[](int) const'
+#9 2.842   501 | inline char QByteArray::operator[](int i) const
+#9 2.842       |             ^~~~~~~~~~
+#9 2.842 /usr/include/x86_64-linux-gnu/qt5/QtCore/qbytearray.h:503:13: note: candidate: 'char QByteArray::operator[](uint) const'
+#9 2.842   503 | inline char QByteArray::operator[](uint i) const
+#9 2.842       |             ^~~~~~~~~~
+#9 2.842 /usr/include/x86_64-linux-gnu/qt5/QtCore/qbytearray.h:626:17: note: candidate: 'QByteRef QByteArray::operator[](int)'
+#9 2.842   626 | inline QByteRef QByteArray::operator[](int i)
+#9 2.842       |                 ^~~~~~~~~~
+#9 2.842 /usr/include/x86_64-linux-gnu/qt5/QtCore/qbytearray.h:628:17: note: candidate: 'QByteRef QByteArray::operator[](uint)'
+#9 2.842   628 | inline QByteRef QByteArray::operator[](uint i)
+#9 2.842       |                 ^~~~~~~~~~
+#9 2.862 make: *** [Makefile:408: sha384.o] Error 1
+#9 ERROR: process "/bin/sh -c cd backend_server &&     qmake echoServer.pro &&     make &&     echo \"Build successful!\" &&     ls -la" did not complete successfully: exit code: 2
+------
+ > [5/5] RUN cd backend_server &&     qmake echoServer.pro &&     make &&     echo "Build successful!" &&     ls -la:
+2.842 /usr/include/x86_64-linux-gnu/qt5/QtCore/qbytearray.h:503:13: note: candidate: 'char QByteArray::operator[](uint) const'
+2.842   503 | inline char QByteArray::operator[](uint i) const
+2.842       |             ^~~~~~~~~~
+2.842 /usr/include/x86_64-linux-gnu/qt5/QtCore/qbytearray.h:626:17: note: candidate: 'QByteRef QByteArray::operator[](int)'
+2.842   626 | inline QByteRef QByteArray::operator[](int i)
+2.842       |                 ^~~~~~~~~~
+2.842 /usr/include/x86_64-linux-gnu/qt5/QtCore/qbytearray.h:628:17: note: candidate: 'QByteRef QByteArray::operator[](uint)'
+2.842   628 | inline QByteRef QByteArray::operator[](uint i)
+2.842       |                 ^~~~~~~~~~
+2.862 make: *** [Makefile:408: sha384.o] Error 1
+------
+Dockerfile:18
+--------------------
+  17 |     
+  18 | >>> RUN cd backend_server && \
+  19 | >>>     qmake echoServer.pro && \
+  20 | >>>     make && \
+  21 | >>>     echo "Build successful!" && \
+  22 | >>>     ls -la
+  23 |     
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c cd backend_server &&     qmake echoServer.pro &&     make &&     echo \"Build successful!\" &&     ls -la" did not complete successfully: exit code: 2

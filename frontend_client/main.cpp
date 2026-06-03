@@ -1,19 +1,21 @@
+/**
+ * @file main.cpp
+ * @brief Точка входа клиентского приложения.
+ *
+ * Использует ClientManager (Singleton) для создания первого окна.
+ * Дополнительные окна создаются кнопкой "+ Новая сессия".
+ */
+
 #include <QApplication>
-#include "clientwindow.h"
+#include "clientmanager.h"
 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
     app.setApplicationName("TaMP Client");
 
-    // Получаем единственный экземпляр через Singleton
-    ClientWindow *window = ClientWindow::getInstance();
-    window->show();
+    // получаем Singleton менеджер и создаём первое окно
+    ClientManager::getInstance()->createNewWindow();
 
-    int result = app.exec();
-
-    // Удаляем экземпляр при закрытии
-    ClientWindow::dropInstance();
-
-    return result;
+    return app.exec(); // запускаем Qt Event Loop
 }

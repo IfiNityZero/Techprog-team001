@@ -1,36 +1,36 @@
+/**
+ * @file clientwindow.cpp
+ * @brief Реализация окна клиента с авторизацией и таблицей результатов.
+ */
+
 #include "clientwindow.h"
-#include <QApplication>
-
-// Инициализация статического указателя
-ClientWindow* ClientWindow::p_instance = nullptr;
-
-ClientWindow* ClientWindow::getInstance()
-{
-    if (!p_instance)
-        p_instance = new ClientWindow();
-    return p_instance;
-}
-
-void ClientWindow::dropInstance()
-{
-    delete p_instance;
-    p_instance = nullptr;
-}
+#include "clientmanager.h"
 
 ClientWindow::ClientWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    socket = new QTcpSocket(this);
+    socket = new QTcpSocket(this); // создаём TCP сокет
+
+    // подключаем сигналы сокета к нашим слотам
     connect(socket, &QTcpSocket::connected,    this, &ClientWindow::onConnected);
     connect(socket, &QTcpSocket::disconnected, this, &ClientWindow::onDisconnected);
     connect(socket, &QTcpSocket::readyRead,    this, &ClientWindow::onReadyRead);
 
     setupUI();
-    setWindowTitle("TaMP Client — команда 001");
-    resize(800, 600);
+    resize(800, 620);
 }
 
 ClientWindow::~ClientWindow() {}
+
+void ClientWindow::closeEvent(QCloseEvent *event)
+{
+    emit windowClosed(this); // сообщаем менеджеру что окно закрывается
+    event->accept();         // разрешаем закрытие
+}
+
+// ─────────────────────────────────────────────
+//  ПОСТРОЕНИЕ UI
+// ─────────────────────────────────────────────
 
 void ClientWindow::setupUI()
 {
@@ -42,7 +42,7 @@ void ClientWindow::setupUI()
 
     stackedWidget->addWidget(loginPage);
     stackedWidget->addWidget(mainPage);
-    stackedWidget->setCurrentWidget(loginPage);
+    stackedWidget->setCurrentWidget(loginPage); // начинаем с экрана логина
 }
 
 void ClientWindow::setupLoginPage()
@@ -52,11 +52,13 @@ void ClientWindow::setupLoginPage()
     layout->setSpacing(10);
     layout->setContentsMargins(40, 40, 40, 40);
 
+    // Заголовок
     QLabel *title = new QLabel("TaMP Client — команда 001");
     title->setAlignment(Qt::AlignCenter);
     title->setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 10px;");
     layout->addWidget(title);
 
+    // Блок подключения
     QGroupBox *grpConn = new QGroupBox("Подключение к серверу");
     QHBoxLayout *connLayout = new QHBoxLayout(grpConn);
     connLayout->addWidget(new QLabel("Хост:"));
@@ -75,6 +77,7 @@ void ClientWindow::setupLoginPage()
     connLayout->addStretch();
     layout->addWidget(grpConn);
 
+    // Блок авторизации
     QGroupBox *grpAuth = new QGroupBox("Авторизация");
     QVBoxLayout *authLayout = new QVBoxLayout(grpAuth);
 
@@ -89,14 +92,14 @@ void ClientWindow::setupLoginPage()
     rowPass->addWidget(new QLabel("Пароль:"));
     editPassword = new QLineEdit();
     editPassword->setPlaceholderText("Введите пароль...");
-    editPassword->setEchoMode(QLineEdit::Password);
+    editPassword->setEchoMode(QLineEdit::Password); // скрываем пароль точками
     rowPass->addWidget(editPassword);
     authLayout->addLayout(rowPass);
 
     QHBoxLayout *rowBtns = new QHBoxLayout();
     btnLogin    = new QPushButton("Войти");
     btnRegister = new QPushButton("Зарегистрироваться");
-    btnLogin->setEnabled(false);
+    btnLogin->setEnabled(false);    // активны только после подключения
     btnRegister->setEnabled(false);
     btnLogin->setFixedHeight(36);
     btnRegister->setFixedHeight(36);
@@ -110,11 +113,13 @@ void ClientWindow::setupLoginPage()
     layout->addWidget(grpAuth);
     layout->addStretch();
 
+    // Подсказка
     QLabel *hint = new QLabel("Администратор по умолчанию: login=admin, password=admin123");
     hint->setAlignment(Qt::AlignCenter);
     hint->setStyleSheet("color: gray; font-size: 11px;");
     layout->addWidget(hint);
 
+    // Сигналы кнопок
     connect(btnConnect,  &QPushButton::clicked, this, &ClientWindow::connectToServer);
     connect(btnLogin,    &QPushButton::clicked, this, &ClientWindow::sendLogin);
     connect(btnRegister, &QPushButton::clicked, this, &ClientWindow::sendRegister);
@@ -127,16 +132,25 @@ void ClientWindow::setupMainPage()
     layout->setSpacing(8);
     layout->setContentsMargins(12, 12, 12, 12);
 
+    // Верхняя строка: информация о пользователе + кнопки
     QHBoxLayout *topRow = new QHBoxLayout();
     labelUserInfo = new QLabel("Пользователь: —");
     labelUserInfo->setStyleSheet("font-weight: bold; font-size: 13px;");
     topRow->addWidget(labelUserInfo);
     topRow->addStretch();
+
+    // Кнопка нового окна
+    btnNewWindow = new QPushButton("+ Новая сессия");
+    btnNewWindow->setFixedWidth(120);
+    btnNewWindow->setToolTip("Открыть новое окно клиента для другого пользователя");
+    topRow->addWidget(btnNewWindow);
+
     btnLogout = new QPushButton("Выйти");
     btnLogout->setFixedWidth(80);
     topRow->addWidget(btnLogout);
     layout->addLayout(topRow);
 
+    // Блок команды
     QGroupBox *grpCmd = new QGroupBox("Команда");
     QVBoxLayout *cmdLayout = new QVBoxLayout(grpCmd);
 
@@ -174,6 +188,7 @@ void ClientWindow::setupMainPage()
     cmdLayout->addWidget(btnSend);
     layout->addWidget(grpCmd);
 
+    // Таблица результатов
     QGroupBox *grpTable = new QGroupBox("Результаты");
     QVBoxLayout *tableLayout = new QVBoxLayout(grpTable);
     tableResult = new QTableWidget(0, 2);
@@ -184,11 +199,12 @@ void ClientWindow::setupMainPage()
     tableLayout->addWidget(tableResult);
     layout->addWidget(grpTable);
 
+    // Лог
     QGroupBox *grpLog = new QGroupBox("Лог");
     QVBoxLayout *logLayout = new QVBoxLayout(grpLog);
     textLog = new QTextEdit();
     textLog->setReadOnly(true);
-    textLog->setMaximumHeight(120);
+    textLog->setMaximumHeight(100);
     textLog->setFont(QFont("Courier New", 9));
     logLayout->addWidget(textLog);
     btnClear = new QPushButton("Очистить");
@@ -196,12 +212,18 @@ void ClientWindow::setupMainPage()
     logLayout->addWidget(btnClear, 0, Qt::AlignRight);
     layout->addWidget(grpLog);
 
-    connect(btnSend,      &QPushButton::clicked, this, &ClientWindow::sendCommand);
-    connect(btnLogout,    &QPushButton::clicked, this, &ClientWindow::showLoginPage);
-    connect(btnClear,     &QPushButton::clicked, textLog, &QTextEdit::clear);
-    connect(comboCommand, QOverload<int>::of(&QComboBox::currentIndexChanged),
+    // Сигналы
+    connect(btnSend,       &QPushButton::clicked, this, &ClientWindow::sendCommand);
+    connect(btnLogout,     &QPushButton::clicked, this, &ClientWindow::showLoginPage);
+    connect(btnNewWindow,  &QPushButton::clicked, this, &ClientWindow::openNewWindow);
+    connect(btnClear,      &QPushButton::clicked, textLog, &QTextEdit::clear);
+    connect(comboCommand,  QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &ClientWindow::onCommandChanged);
 }
+
+// ─────────────────────────────────────────────
+//  ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ
+// ─────────────────────────────────────────────
 
 void ClientWindow::showLoginPage()
 {
@@ -214,6 +236,8 @@ void ClientWindow::showMainPage(const QString &role)
 {
     currentRole = role;
     comboCommand->clear();
+
+    // команды доступные всем авторизованным
     comboCommand->addItem("Шифр Виженера — зашифровать", "vigenere_encrypt");
     comboCommand->addItem("Шифр Виженера — расшифровать", "vigenere_decrypt");
     comboCommand->addItem("SHA-384 хеш", "sha384");
@@ -221,6 +245,7 @@ void ClientWindow::showMainPage(const QString &role)
     comboCommand->addItem("Стеганография — внедрить", "stego_encode");
     comboCommand->addItem("Стеганография — извлечь", "stego_decode");
 
+    // команды только для администратора
     if (role == "admin") {
         comboCommand->addItem("[ADMIN] Список пользователей", "admin_users");
         comboCommand->addItem("[ADMIN] Удалить пользователя", "admin_delete");
@@ -234,6 +259,20 @@ void ClientWindow::showMainPage(const QString &role)
     stackedWidget->setCurrentWidget(mainPage);
     onCommandChanged(0);
 }
+
+// ─────────────────────────────────────────────
+//  НОВОЕ ОКНО
+// ─────────────────────────────────────────────
+
+void ClientWindow::openNewWindow()
+{
+    // создаём новое независимое окно через менеджер
+    ClientManager::getInstance()->createNewWindow();
+}
+
+// ─────────────────────────────────────────────
+//  СЕТЬ
+// ─────────────────────────────────────────────
 
 void ClientWindow::connectToServer()
 {
@@ -276,6 +315,7 @@ void ClientWindow::onReadyRead()
     QString response = QString::fromUtf8(data).trimmed();
     appendLog("◀ " + response);
 
+    // обрабатываем ответ на логин
     if (pendingAction == "login") {
         pendingAction = "";
         if (response.startsWith("ok: logged in as")) {
@@ -288,6 +328,7 @@ void ClientWindow::onReadyRead()
         return;
     }
 
+    // обрабатываем ответ на регистрацию
     if (pendingAction == "register") {
         pendingAction = "";
         labelAuthStatus->setText(response);
@@ -296,9 +337,14 @@ void ClientWindow::onReadyRead()
         return;
     }
 
+    // обычный ответ — добавляем в таблицу
     if (stackedWidget->currentWidget() == mainPage)
         addTableRow(lastCommand, response);
 }
+
+// ─────────────────────────────────────────────
+//  ОТПРАВКА КОМАНД
+// ─────────────────────────────────────────────
 
 void ClientWindow::sendLogin()
 {
@@ -333,11 +379,12 @@ void ClientWindow::sendRegister()
 void ClientWindow::sendCommand()
 {
     if (socket->state() != QAbstractSocket::ConnectedState) {
-        appendLog("Ошибка: нет подключения"); return;
+        appendLog("Ошибка: нет подключения");
+        return;
     }
 
     int idx = comboCommand->currentIndex();
-    QString cmd = comboCommand->itemData(idx).toString();
+    QString cmd  = comboCommand->itemData(idx).toString();
     QString arg1 = editArg1->text().trimmed();
     QString arg2 = editArg2->text().trimmed();
     QString arg3 = editArg3->text().trimmed();
@@ -369,6 +416,10 @@ void ClientWindow::sendCommand()
     appendLog("▶ " + request);
     socket->write((request + "\r\n").toUtf8());
 }
+
+// ─────────────────────────────────────────────
+//  АДАПТАЦИЯ ПОЛЕЙ
+// ─────────────────────────────────────────────
 
 void ClientWindow::onCommandChanged(int index)
 {
@@ -409,13 +460,17 @@ void ClientWindow::onCommandChanged(int index)
     }
 }
 
+// ─────────────────────────────────────────────
+//  ТАБЛИЦА И ЛОГ
+// ─────────────────────────────────────────────
+
 void ClientWindow::addTableRow(const QString &cmd, const QString &response)
 {
     int row = tableResult->rowCount();
-    tableResult->insertRow(row);
-    tableResult->setItem(row, 0, new QTableWidgetItem(cmd));
-    tableResult->setItem(row, 1, new QTableWidgetItem(response));
-    tableResult->scrollToBottom();
+    tableResult->insertRow(row);                                  // добавляем строку
+    tableResult->setItem(row, 0, new QTableWidgetItem(cmd));      // команда
+    tableResult->setItem(row, 1, new QTableWidgetItem(response)); // ответ
+    tableResult->scrollToBottom();                                // прокручиваем вниз
 }
 
 void ClientWindow::appendLog(const QString &msg, const QString &color)
